@@ -3,37 +3,33 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class Encoder(nn.Module):
+    def __init__(self, num_channels=300):
+        super(Encoder, self).__init__()
+        self.enc_conv1 = nn.Conv2d(num_channels, num_channels // 2, kernel_size=3, padding=1)
+        self.enc_conv2 = nn.Conv2d(num_channels // 2, num_channels // 4, kernel_size=3, padding=1)
+        self.enc_conv3 = nn.Conv2d(num_channels // 4, 64, kernel_size=3, padding=1)
+
+    def forward(self, x):
+        x = F.relu(self.enc_conv1(x))
+        x = F.relu(self.enc_conv2(x))
+        x = F.relu(self.enc_conv3(x))
+        return x
+
+
 class Autoencoder(nn.Module):
     def __init__(self, num_channels=300):
         super(Autoencoder, self).__init__()
-        self.num_channels = num_channels
-
-        # Encoder layers
-        self.enc_conv1 = nn.Conv2d(self.num_channels, self.num_channels // 2, kernel_size=3, padding=1)
-        self.enc_conv2 = nn.Conv2d(self.num_channels // 2, self.num_channels // 4, kernel_size=3, padding=1)
-        self.enc_conv3 = nn.Conv2d(self.num_channels // 4, 64, kernel_size=3, padding=1)
-
-        # Decoder layers
-        self.dec_conv1 = nn.Conv2d(64, self.num_channels // 4, kernel_size=3, padding=1)
-        self.dec_conv2 = nn.Conv2d(self.num_channels // 4, self.num_channels // 2, kernel_size=3, padding=1)
-        self.dec_conv3 = nn.Conv2d(self.num_channels // 2, self.num_channels, kernel_size=3, padding=1)
+        self.encoder = Encoder(num_channels)
+        self.dec_conv1 = nn.Conv2d(64, num_channels // 4, kernel_size=3, padding=1)
+        self.dec_conv2 = nn.Conv2d(num_channels // 4, num_channels // 2, kernel_size=3, padding=1)
+        self.dec_conv3 = nn.Conv2d(num_channels // 2, num_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
-        # Encoding
-        x = F.relu(self.enc_conv1(x))
-        print("After enc_conv1:", x.shape)
-        x = F.relu(self.enc_conv2(x))
-        print("After enc_conv2:", x.shape)
-        x = F.relu(self.enc_conv3(x))
-        print("After enc_conv3:", x.shape)
-
-        # Decoding
+        x = self.encoder(x)
         x = F.relu(self.dec_conv1(x))
-        print("After dec_conv1:", x.shape)
         x = F.relu(self.dec_conv2(x))
-        print("After dec_conv2:", x.shape)
         x = F.sigmoid(self.dec_conv3(x))
-        print("After dec_conv3:", x.shape)
         return x
 
 

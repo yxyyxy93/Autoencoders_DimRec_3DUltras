@@ -241,15 +241,18 @@ if __name__ == "__main__":
             is_best = avg_val_score > best_score
             is_last = (epoch + 1) == config.epochs
             best_score = max(avg_val_score, best_score)
+            # Saving the encoder part only
             save_checkpoint({"epoch": epoch + 1,
                              "best_score": best_score,
                              "state_dict": model.state_dict(),
+                             "encoder_state_dict": model.encoder.state_dict(),  # Encoder's state dict
                              "ema_state_dict": ema_model.state_dict(),
                              "optimizer": optimizer.state_dict(),
                              "scheduler": scheduler.state_dict()},
                             results_dir=results_dir,
                             best_file_name="d_best.pth.tar",
                             last_file_name="d_last.pth.tar",
+                            encoder_file_name="encoder.pth",  # Specify the encoder file name
                             is_best=is_best,
                             is_last=is_last
                             )

@@ -77,14 +77,18 @@ def save_checkpoint(
         results_dir: str,
         best_file_name: str,
         last_file_name: str,
+        encoder_file_name="encoder.pth",
         is_best: bool = False,
         is_last: bool = False,
 ) -> None:
-
     if is_best:
         torch.save(state_dict, os.path.join(results_dir, best_file_name))
     if is_last:
         torch.save(state_dict, os.path.join(results_dir, last_file_name))
+    if encoder_file_name:
+        encoder_path = os.path.join(results_dir, encoder_file_name)
+        # Assuming 'encoder' is the encoder part of your model
+        torch.save(state_dict['encoder_state_dict'], encoder_path)
 
 
 class Summary(Enum):
