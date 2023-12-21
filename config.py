@@ -16,6 +16,8 @@ model_weight_decay = 1e-5  # weight decay (e.g., 1e-4 or 1e-5) can be beneficial
 model_ema_decay = 0.5
 # How many iterations to print the training result
 print_frequency = 100
+train_print_frequency = 5
+valid_print_frequency = 10
 
 # Dynamically adjust the learning rate policy
 lr_scheduler_milestones = [int(epochs * 0.125), int(epochs * 0.250), int(epochs * 0.500), int(epochs * 0.750)]

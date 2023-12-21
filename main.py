@@ -135,18 +135,14 @@ def validate(validate_model: nn.Module,
     with torch.no_grad():
         for batch_index, batch_data in enumerate(data_prefetcher):
             lr = batch_data["lr"].to(device=config.device, non_blocking=True)
-
             with amp.autocast():
                 output = validate_model(lr)
                 loss = criterion(output, lr)
                 score = val_crite(output, lr)  # Compute
-
             losses.update(loss.item(), lr.size(0))  # Update loss meter
             scores.update(score.item(), lr.size(0))
-
             batch_time.update(time.time() - end)
             end = time.time()
-
             if batch_index % config.valid_print_frequency == 0:
                 writer.add_scalar(f"{mode}/Loss", loss.item(), epoch + 1)  # Log loss
                 writer.add_scalar(f"{mode}/SSIM", score.item(), epoch + 1)
@@ -159,7 +155,8 @@ def validate(validate_model: nn.Module,
 
 
 if __name__ == "__main__":
-    model = Autoencoder().to(config.device)
+    model = Autoencoder(num_channels=config.num_channel).to(config.device)
+
     # Create an Exponential Moving Average Model
     ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged: \
         (1 - config.model_ema_decay) * averaged_model_parameter + config.model_ema_decay * model_parameter
@@ -168,7 +165,6 @@ if __name__ == "__main__":
     criterion = nn.MSELoss()
     val_crite = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.model_lr)
-
     scheduler = lr_scheduler.MultiStepLR(optimizer=optimizer,
                                          milestones=config.lr_scheduler_milestones,
                                          gamma=config.lr_scheduler_gamma)

@@ -9,14 +9,14 @@ class Autoencoder(nn.Module):
         self.num_channels = num_channels
 
         # Encoder layers
-        self.enc_conv1 = nn.Conv2d(self.num_channels, 150, kernel_size=3, padding=1)
-        self.enc_conv2 = nn.Conv2d(150, 75, kernel_size=3, padding=1)
-        self.enc_conv3 = nn.Conv2d(75, 64, kernel_size=3, padding=1)
+        self.enc_conv1 = nn.Conv2d(self.num_channels, self.num_channels // 2, kernel_size=3, padding=1)
+        self.enc_conv2 = nn.Conv2d(self.num_channels // 2, self.num_channels // 4, kernel_size=3, padding=1)
+        self.enc_conv3 = nn.Conv2d(self.num_channels // 4, 64, kernel_size=3, padding=1)
 
         # Decoder layers
-        self.dec_conv1 = nn.Conv2d(64, 75, kernel_size=3, padding=1)
-        self.dec_conv2 = nn.Conv2d(75, 150, kernel_size=3, padding=1)
-        self.dec_conv3 = nn.Conv2d(150, self.num_channels, kernel_size=3, padding=1)
+        self.dec_conv1 = nn.Conv2d(64, self.num_channels // 4, kernel_size=3, padding=1)
+        self.dec_conv2 = nn.Conv2d(self.num_channels // 4, self.num_channels // 2, kernel_size=3, padding=1)
+        self.dec_conv3 = nn.Conv2d(self.num_channels // 2, self.num_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         # Encoding
