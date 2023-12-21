@@ -6,10 +6,9 @@
 import queue
 import threading
 
+import os
 import matplotlib.pyplot as plt
 import torch
-import os
-import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 from utils import imgproc
@@ -20,7 +19,6 @@ __all__ = [
     "PrefetchGenerator",
     "PrefetchDataLoader",
     "CPUPrefetcher", "CUDAPrefetcher",
-    "show_dataset_info"
 ]
 
 
@@ -70,6 +68,10 @@ class TrainValidImageDataset(Dataset):
         # Load the images
         image_noisy = read_csv_to_3d_array(dataset_file)
         image_origin = read_csv_to_3d_array(label_file)
+
+        # change dimension
+        image_noisy = image_noisy.transpose(2, 1, 0)
+        image_origin = image_origin.transpose(2, 0, 1)
 
         image_noisy = imgproc.normalize(image_noisy)
 
@@ -121,6 +123,10 @@ class TestDataset(Dataset):
         # Load the images
         image_noisy = read_csv_to_3d_array(dataset_file)
         image_origin = read_csv_to_3d_array(label_file)
+
+        # change dimension
+        image_noisy = image_noisy.transpose(2, 1, 0)
+        image_origin = image_origin.transpose(2, 0, 1)
 
         image_noisy = imgproc.normalize(image_noisy)
 
@@ -256,7 +262,6 @@ class CUDAPrefetcher:
 
 
 if __name__ == "__main__":
-    import numpy as np
     import os
 
     # Set mode for testing
@@ -276,4 +281,19 @@ if __name__ == "__main__":
         print(input.shape)
         print(gt.shape)
 
-        break
+        # # benchmark the location of the defects (dimension consistence of 2 matrix)
+        # Find the indices where value is 7 along the 2nd axis
+        mask = (gt == 7)
+        mask = mask.sum(dim=1).squeeze()
+        # Sum up 'input' along the 2nd axis to get a 2D image
+        input_summed = input[:, 20:-20, :].sum(dim=1).squeeze()
+        # Plotting
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+        # First subplot for 'gt_summed'
+        axs[0].imshow(mask, cmap='gray')
+        axs[0].set_title('Summed GT mask')
+        # Second subplot for 'input_summed'
+        axs[1].imshow(input_summed, cmap='gray')
+        axs[1].set_title('Summed Input')
+
+        plt.show()

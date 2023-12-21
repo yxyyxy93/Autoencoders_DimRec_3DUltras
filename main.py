@@ -52,12 +52,12 @@ def load_dataset(num_folds=5) -> list:
                                 num_workers=4, pin_memory=True, drop_last=True,
                                 persistent_workers=True)
         # Now you can check if 'device' is set to "cpu"
-        # if device == 'cpu':
-        train_prefetcher = CPUPrefetcher(train_loader)
-        val_prefetcher = CPUPrefetcher(val_loader)
-        # else:
-        #     train_prefetcher = CUDAPrefetcher(train_loader, device)
-        #     val_prefetcher = CUDAPrefetcher(val_loader, device)
+        if config.device == "cpu":
+            train_prefetcher = CPUPrefetcher(train_loader)
+            val_prefetcher = CPUPrefetcher(val_loader)
+        else:
+            train_prefetcher = CUDAPrefetcher(train_loader, config.device)
+            val_prefetcher = CUDAPrefetcher(val_loader, config.device)
         dataloaders_per_fold.append((train_prefetcher, val_prefetcher))
 
     return dataloaders_per_fold
@@ -86,17 +86,13 @@ def train(train_model: nn.Module,
 
     for batch_index, batch_data in enumerate(train_prefetcher):
         data_time.update(time.time() - end)
-        gt = batch_data["gt"].to(device=device, non_blocking=True)
-        lr = batch_data["lr"].to(device=device, non_blocking=True)
+        lr = batch_data["lr"].to(device=config.device, non_blocking=True)
         train_model.zero_grad(set_to_none=True)
 
         with amp.autocast():
             output = train_model(lr)
-            # output = output[:, 0]  # only x-y location : [B, 1, w, h]
-            # gt = gt[:, 0]  # only x-y location : [B, 1, w, h]
-            gt = gt.long()  # Ensure ground truth is of type long
-            loss = criterion(output[:, 0], gt[:, 0], output[:, 1], gt[:, 1])
-            score = val_crite(output[:, 0], gt[:, 0])  # Compute
+            loss = criterion(output, lr)
+            score = val_crite(output, lr)  # Compute
 
         scaler.scale(loss).backward()
         scaler.step(optimizer)
@@ -138,14 +134,12 @@ def validate(validate_model: nn.Module,
 
     with torch.no_grad():
         for batch_index, batch_data in enumerate(data_prefetcher):
-            gt = batch_data["gt"].to(device=device, non_blocking=True)
-            lr = batch_data["lr"].to(device=device, non_blocking=True)
+            lr = batch_data["lr"].to(device=config.device, non_blocking=True)
 
             with amp.autocast():
                 output = validate_model(lr)
-                gt = gt.long()  # Ensure ground truth is of type long
-                loss = criterion(output[:, 0], gt[:, 0], output[:, 1], gt[:, 1])
-                score = val_crite(output[:, 0], gt[:, 0])  # Compute
+                loss = criterion(output, lr)
+                score = val_crite(output, lr)  # Compute
 
             losses.update(loss.item(), lr.size(0))  # Update loss meter
             scores.update(score.item(), lr.size(0))
@@ -165,8 +159,7 @@ def validate(validate_model: nn.Module,
 
 
 if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Autoencoder().to(device)
+    model = Autoencoder().to(config.device)
     # Create an Exponential Moving Average Model
     ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged: \
         (1 - config.model_ema_decay) * averaged_model_parameter + config.model_ema_decay * model_parameter

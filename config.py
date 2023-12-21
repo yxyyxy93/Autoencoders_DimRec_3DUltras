@@ -1,5 +1,5 @@
 epochs = 100
-num_channel = 300
+num_channel = 256
 
 image_dir = r'.\dataset\sim_data'  # path to the 'sim_data' directory
 label_dir = r'.\dataset\sim_struct'  # path to the 'sim_struct' directory
